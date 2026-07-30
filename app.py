@@ -3,7 +3,7 @@ import pandas as pd
 from datetime import datetime
 import os
 
-st.set_page_config(page_title="CLIMA POSITIVO • Gestão", page_layout="centered", initial_sidebar_state="collapsed")
+st.set_page_config(page_title="CLIMA POSITIVO • Gestão", layout="centered", initial_sidebar_state="collapsed")
 
 st.markdown("""
     <style>
@@ -115,9 +115,6 @@ if st.session_state.pagina_ativa == "Painel":
 elif st.session_state.pagina_ativa == "Registo":
     st.markdown("<h3>➕ Registo de Material</h3>", unsafe_allow_html=True)
     
-    # Utilizar a câmara nativa para tirar foto do produto/etiqueta se desejar
-    foto = st.camera_input("📷 Tirar foto do produto ou código (Opcional)")
-
     with st.form("form_registo", clear_on_submit=True):
         codigo = st.text_input("CÓDIGO DO PRODUTO (Ex: P125)")
         material = st.text_input("NOME DO MATERIAL / DESCRIÇÃO")
