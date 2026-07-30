@@ -3,10 +3,9 @@ import pandas as pd
 from datetime import datetime
 import os
 
-# Configuração da Página para visual mobile-friendly otimizado
-st.set_page_config(page_title="CLIMA POSITIVO", page_layout="centered", initial_sidebar_state="collapsed")
+# Configuração corrigida com 'layout'
+st.set_page_config(page_title="CLIMA POSITIVO", layout="centered", initial_sidebar_state="collapsed")
 
-# --- ESTILO VISUAL CUSTOMIZADO (Inspirado na imagem) ---
 st.markdown("""
     <style>
     .main {
@@ -66,7 +65,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- FICHEIRO DE PERSISTÊNCIA ---
 ARQUIVO_DADOS = "dados_sobras.csv"
 
 def carregar_dados():
@@ -81,18 +79,15 @@ def carregar_dados():
 def guardar_dados(df):
     df.to_csv(ARQUIVO_DADOS, index=False)
 
-# Inicializar estados
 if "obras" not in st.session_state:
     st.session_state.obras = ["Armazém Central", "Obra Alpha", "Residencial Parque"]
 
 if "menu_ativo" not in st.session_state:
     st.session_state.menu_ativo = "Resumo"
 
-# --- CABEÇALHO DA APP (Estilo Telemóvel) ---
 st.markdown("<p style='color: #71717A; font-size: 14px; margin-bottom: 0px;'>Olá, Administrador</p>", unsafe_allow_html=True)
 st.markdown("<h2 style='color: #09090B; margin-top: 0px; font-weight: 700;'>Painel de Controlo</h2>", unsafe_allow_html=True)
 
-# Menu de navegação superior rápido (simulando a barra inferior da imagem)
 menu_cols = st.columns(5)
 with menu_cols[0]:
     if st.button("📊 Resumo", key="btn_res"): st.session_state.menu_ativo = "Resumo"
@@ -109,14 +104,10 @@ st.markdown("---")
 
 df_atual = carregar_dados()
 
-# ==============================================================================
-# 1. RESUMO
-# ==============================================================================
 if st.session_state.menu_ativo == "Resumo":
     total_materiais = len(df_atual) if not df_atual.empty else 0
     total_sobras = df_atual["qtd"].sum() if not df_atual.empty else 0
 
-    # Layout de Cartões em grelha 2x2 exato ao design
     c1, c2 = st.columns(2)
     with c1:
         st.markdown(f"""
@@ -168,9 +159,6 @@ if st.session_state.menu_ativo == "Resumo":
     else:
         st.info("Ainda não existem movimentos registados.")
 
-# ==============================================================================
-# 2. SOBRAS / REGISTO DE MATERIAL
-# ==============================================================================
 elif st.session_state.menu_ativo == "Sobras" or st.session_state.menu_ativo == "Estoque":
     st.markdown("### ♻️ Banco de Sobras e Materiais")
     
@@ -214,9 +202,6 @@ elif st.session_state.menu_ativo == "Sobras" or st.session_state.menu_ativo == "
     else:
         st.info("Sem materiais registados.")
 
-# ==============================================================================
-# 3. OBRAS E MOVIMENTOS
-# ==============================================================================
 elif st.session_state.menu_ativo == "Obras":
     st.markdown("### 🏗️ Gestão de Obras")
     with st.form("form_obra", clear_on_submit=True):
