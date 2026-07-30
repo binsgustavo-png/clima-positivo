@@ -2,79 +2,51 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
+from streamlit_zxing import scan_barcode
 
-# Configuração corrigida com 'layout'
-st.set_page_config(page_title="CLIMA POSITIVO", layout="centered", initial_sidebar_state="collapsed")
+# Configuração da Página
+st.set_page_config(page_title="CLIMA POSITIVO • Gestão", page_layout="centered", initial_sidebar_state="collapsed")
 
+# --- ESTILO VISUAL PREMIUM ---
 st.markdown("""
     <style>
-    .main {
-        background-color: #F8F9FA;
+    .stApp { background-color: #F3F4F6; }
+    h1, h2, h3 { color: #111827; font-family: sans-serif; }
+    .card-container { display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap; }
+    .card { flex: 1; min-width: 180px; padding: 1.25rem; border-radius: 12px; color: white; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+    .card-title { font-size: 0.85rem; font-weight: 600; opacity: 0.9; margin-bottom: 0.4rem; }
+    .card-value { font-size: 1.75rem; font-weight: 700; }
+    .bg-orange { background-color: #EA580C; }
+    .bg-green { background-color: #059669; }
+    .bg-blue { background-color: #0284C7; }
+    
+    .item-card {
+        background-color: white; padding: 1rem; border-radius: 12px; margin-bottom: 0.75rem;
+        border: 1px solid #E5E7EB; display: flex; justify-content: space-between; align-items: center;
     }
-    .card-orange {
-        background-color: #FF7043;
-        color: white;
-        padding: 20px;
-        border-radius: 16px;
-        margin-bottom: 12px;
-    }
-    .card-green {
-        background-color: #26A69A;
-        color: white;
-        padding: 20px;
-        border-radius: 16px;
-        margin-bottom: 12px;
-    }
-    .card-blue {
-        background-color: #42A5F5;
-        color: white;
-        padding: 20px;
-        border-radius: 16px;
-        margin-bottom: 12px;
-    }
-    .card-yellow {
-        background-color: #FFA726;
-        color: white;
-        padding: 20px;
-        border-radius: 16px;
-        margin-bottom: 12px;
-    }
-    .card-title {
-        font-size: 14px;
-        font-weight: 500;
-        margin-bottom: 4px;
-        opacity: 0.9;
-    }
-    .card-value {
-        font-size: 32px;
-        font-weight: 700;
-    }
+    .item-codigo { font-size: 0.85rem; color: #6B7280; font-family: monospace; font-weight: bold; }
+    .item-nome { font-size: 1rem; font-weight: 600; color: #111827; }
+    .item-meta { font-size: 0.8rem; color: #6B7280; }
+    .item-qtd { background-color: #ECFDF5; color: #059669; padding: 0.2rem 0.6rem; border-radius: 99px; font-weight: 700; font-size: 1rem; }
+    
     div.stButton > button {
-        width: 100%;
-        border-radius: 12px;
-        font-weight: 600;
-        background-color: #26A69A;
-        color: white;
-        border: none;
-        padding: 10px;
+        width: 100%; background-color: #059669; color: white; border-radius: 8px; font-weight: 600; padding: 0.6rem; border: none;
     }
-    div.stButton > button:hover {
-        background-color: #00897B;
-        color: white;
-    }
+    div.stButton > button:hover { background-color: #047857; }
     </style>
 """, unsafe_allow_html=True)
 
-ARQUIVO_DADOS = "dados_sobras.csv"
+# --- PERSISTÊNCIA CSV ---
+ARQUIVO_DADOS = "dados_sobras_v2.csv"
 
 def carregar_dados():
     if os.path.exists(ARQUIVO_DADOS):
         try:
             return pd.read_csv(ARQUIVO_DADOS)
         except Exception:
-            return pd.DataFrame(columns=["codigo", "material", "qtd", "local", "estado", "data"])
+            return pd.DataFrame(columns=["codigo", "material", "qtd", "local", "data"])
     else:
-        return pd.DataFrame(columns=["codigo", "material", "qtd", "local", "estado", "data"])
+        return pd.DataFrame(columns=["codigo", "material", "qtd", "local", "data"])
 
 def guardar_dados(df):
     df.to_csv(ARQUIVO_DADOS, index=False)
@@ -82,141 +54,141 @@ def guardar_dados(df):
 if "obras" not in st.session_state:
     st.session_state.obras = ["Armazém Central", "Obra Alpha", "Residencial Parque"]
 
-if "menu_ativo" not in st.session_state:
-    st.session_state.menu_ativo = "Resumo"
+if "pagina_ativa" not in st.session_state:
+    st.session_state.pagina_ativa = "Painel"
 
-st.markdown("<p style='color: #71717A; font-size: 14px; margin-bottom: 0px;'>Olá, Administrador</p>", unsafe_allow_html=True)
-st.markdown("<h2 style='color: #09090B; margin-top: 0px; font-weight: 700;'>Painel de Controlo</h2>", unsafe_allow_html=True)
-
-menu_cols = st.columns(5)
-with menu_cols[0]:
-    if st.button("📊 Resumo", key="btn_res"): st.session_state.menu_ativo = "Resumo"
-with menu_cols[1]:
-    if st.button("📦 Estoque", key="btn_est"): st.session_state.menu_ativo = "Estoque"
-with menu_cols[2]:
-    if st.button("🔄 Movs", key="btn_mov"): st.session_state.menu_ativo = "Movimentos"
-with menu_cols[3]:
-    if st.button("♻️ Sobras", key="btn_sob"): st.session_state.menu_ativo = "Sobras"
-with menu_cols[4]:
-    if st.button("🏗️ Obras", key="btn_obr"): st.session_state.menu_ativo = "Obras"
+# Cabeçalho
+st.markdown("""
+    <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;'>
+        <div>
+            <p style='margin: 0; color: #6B7280; font-size: 0.9rem;'>Painel de Controlo</p>
+            <h1 style='margin: 0; font-size: 1.8rem;'>CLIMA POSITIVO</h1>
+        </div>
+        <div style='background: #E0F2FE; color: #0369A1; padding: 0.4rem 0.8rem; border-radius: 99px; font-weight: 600; font-size: 0.85rem;'>
+            🟢 Online
+        </div>
+    </div>
+""", unsafe_allow_html=True)
 
 st.markdown("---")
 
+# Menu Superior
+nav_cols = st.columns(3)
+with nav_cols[0]:
+    if st.button("📊 Painel", key="nav_p"): st.session_state.pagina_ativa = "Painel"
+with nav_cols[1]:
+    if st.button("📷 Ler / Registar", key="nav_r"): st.session_state.pagina_ativa = "Registo"
+with nav_cols[2]:
+    if st.button("📋 Inventário", key="nav_i"): st.session_state.pagina_ativa = "Inventario"
+
+st.markdown("---")
 df_atual = carregar_dados()
 
-if st.session_state.menu_ativo == "Resumo":
-    total_materiais = len(df_atual) if not df_atual.empty else 0
-    total_sobras = df_atual["qtd"].sum() if not df_atual.empty else 0
+# ==========================================
+# 1. PAINEL GERAL
+# ==========================================
+if st.session_state.pagina_ativa == "Painel":
+    total_materiais = len(df_atual)
+    total_sobras = int(df_atual["qtd"].sum()) if total_materiais > 0 else 0
+    total_obras = len(st.session_state.obras)
 
-    c1, c2 = st.columns(2)
-    with c1:
-        st.markdown(f"""
-            <div class="card-orange">
-                <div class="card-title">📦 Materiais</div>
+    st.markdown(f"""
+        <div class="card-container">
+            <div class="card bg-orange">
+                <div class="card-title">📦 Total Itens</div>
                 <div class="card-value">{total_materiais}</div>
             </div>
-        """, unsafe_allow_html=True)
-    with c2:
-        st.markdown(f"""
-            <div class="card-green">
-                <div class="card-title">📥 Registos Hoje</div>
-                <div class="card-value">{total_materiais}</div>
+            <div class="card bg-green">
+                <div class="card-title">🍃 Total Qtd</div>
+                <div class="card-value">{total_sobras} un</div>
             </div>
-        """, unsafe_allow_html=True)
-
-    c3, c4 = st.columns(2)
-    with c3:
-        st.markdown(f"""
-            <div class="card-blue">
-                <div class="card-title">🔄 Obras Ativas</div>
-                <div class="card-value">{len(st.session_state.obras)}</div>
+            <div class="card bg-blue">
+                <div class="card-title">🏗️ Obras</div>
+                <div class="card-value">{total_obras}</div>
             </div>
-        """, unsafe_allow_html=True)
-    with c4:
-        st.markdown(f"""
-            <div class="card-yellow">
-                <div class="card-title">🍃 Sobras Disp.</div>
-                <div class="card-value">{int(total_sobras)}</div>
-            </div>
-        """, unsafe_allow_html=True)
-
-    st.markdown("### 🕒 Últimos Movimentos")
-    if not df_atual.empty:
-        ultimos = df_atual.tail(5).iloc[::-1]
-        for _, row in ultimos.iterrows():
-            st.markdown(f"""
-                <div style="background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #E4E4E7; display: flex; justify-content: space-between; align-items: center;">
-                    <div>
-                        <strong style="color: #09090B;">{row['material']}</strong><br>
-                        <span style="color: #71717A; font-size: 12px;">{row['local']} • {row['codigo']}</span>
-                    </div>
-                    <div style="text-align: right;">
-                        <span style="color: #26A69A; font-weight: 700;">+{int(row['qtd'])} un</span><br>
-                        <span style="color: #A1A1AA; font-size: 11px;">{row['data']}</span>
-                    </div>
-                </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.info("Ainda não existem movimentos registados.")
-
-elif st.session_state.menu_ativo == "Sobras" or st.session_state.menu_ativo == "Estoque":
-    st.markdown("### ♻️ Banco de Sobras e Materiais")
+        </div>
+    """, unsafe_allow_html=True)
     
-    with st.form("form_registo", clear_on_submit=True):
-        codigo = st.text_input("CÓDIGO DO PRODUTO (Ex: P125)")
-        material = st.text_input("NOME DO MATERIAL")
-        qtd = st.number_input("QUANTIDADE", min_value=0.0, step=1.0, value=1.0)
-        local = st.selectbox("LOCALIZAÇÃO", st.session_state.obras)
-        
-        if st.form_submit_button("Guardar Material"):
-            if not codigo or not material:
-                st.error("Preencha o código e o nome.")
-            else:
-                df_base = carregar_dados()
-                if not df_base.empty and codigo in df_base["codigo"].astype(str).values:
-                    st.error(f"❌ O código '{codigo}' já está registado!")
-                else:
-                    novo = {
-                        "codigo": codigo,
-                        "material": material,
-                        "qtd": qtd,
-                        "local": local,
-                        "estado": "Disponível",
-                        "data": datetime.now().strftime("%Y-%m-%d %H:%M")
-                    }
-                    df_novo = pd.concat([df_base, pd.DataFrame([novo])], ignore_index=True)
-                    guardar_dados(df_novo)
-                    st.success("Material guardado com sucesso!")
-                    st.rerun()
-
-    st.markdown("---")
-    st.markdown("### 📋 Lista de Materiais Existentes")
-    if not df_atual.empty:
-        for idx, row in df_atual.iterrows():
-            st.markdown(f"""
-                <div style="background: white; padding: 12px; border-radius: 12px; margin-bottom: 8px; border: 1px solid #E4E4E7;">
-                    <b>{row['codigo']}</b> - {row['material']}<br>
-                    <span style="color: #71717A; font-size: 13px;">Qtd: {row['qtd']} un | Local: {row['local']}</span>
-                </div>
-            """, unsafe_allow_html=True)
-    else:
-        st.info("Sem materiais registados.")
-
-elif st.session_state.menu_ativo == "Obras":
-    st.markdown("### 🏗️ Gestão de Obras")
+    st.markdown("### 🏢 Gestão de Obras")
     with st.form("form_obra", clear_on_submit=True):
         nova_obra = st.text_input("Nome da Nova Obra")
         if st.form_submit_button("Adicionar Obra") and nova_obra:
             if nova_obra not in st.session_state.obras:
                 st.session_state.obras.append(nova_obra)
-                st.success("Obra adicionada!")
+                st.success(f"Obra '{nova_obra}' adicionada!")
                 st.rerun()
+
     for o in st.session_state.obras:
         st.markdown(f"- 📌 {o}")
 
-elif st.session_state.menu_ativo == "Movimentos":
-    st.markdown("### 🔄 Histórico de Movimentos")
-    if not df_atual.empty:
-        st.dataframe(df_atual, use_container_width=True)
+# ==========================================
+# 2. LEITURA DE CÓDIGO DE BARRAS & REGISTO
+# ==========================================
+elif st.session_state.pagina_ativa == "Registo":
+    st.markdown("<h3>📷 Leitor de Código de Barras & Registo</h3>", unsafe_allow_html=True)
+    st.markdown("Pode ler o código com a câmara do telemóvel ou introduzir manualmente abaixo:")
+
+    # Acionar a câmara para leitura de código de barras
+    codigo_lido = scan_barcode()
+    
+    codigo_inicial = ""
+    if codigo_lido:
+        codigo_inicial = str(codigo_lido)
+        st.success(f"✅ Código detetado com sucesso: **{codigo_inicial}**")
+
+    with st.form("form_registo", clear_on_submit=True):
+        codigo = st.text_input("CÓDIGO DO PRODUTO", value=codigo_inicial)
+        material = st.text_input("NOME DO MATERIAL / DESCRIÇÃO")
+        qtd = st.number_input("QUANTIDADE", min_value=1.0, step=1.0, value=1.0, format="%.0f")
+        local = st.selectbox("LOCALIZAÇÃO / OBRA", st.session_state.obras)
+        
+        if st.form_submit_button("Guardar Material"):
+            if not codigo or not material:
+                st.error("❌ Preencha o código e o nome do material.")
+            else:
+                df_base = carregar_dados()
+                novo_reg = {
+                    "codigo": str(codigo).upper(),
+                    "material": material,
+                    "qtd": int(qtd),
+                    "local": local,
+                    "data": datetime.now().strftime("%Y-%m-%d %H:%M")
+                }
+                df_novo = pd.concat([df_base, pd.DataFrame([novo_reg])], ignore_index=True)
+                guardar_dados(df_novo)
+                st.success("✅ Material guardado com sucesso!")
+                st.rerun()
+
+# ==========================================
+# 3. INVENTÁRIO COMPLETO
+# ==========================================
+elif st.session_state.pagina_ativa == "Inventario":
+    st.markdown("<h3>📋 Inventário e Consultas</h3>", unsafe_allow_html=True)
+    
+    if df_atual.empty:
+        st.info("ℹ️ O inventário está vazio.")
     else:
-        st.info("Ainda sem movimentos.")
+        pesquisa = st.text_input("🔍 Pesquisar código, material ou obra...", "")
+        if pesquisa:
+            df_exibe = df_atual[
+                df_atual['codigo'].str.contains(pesquisa, case=False) |
+                df_atual['material'].str.contains(pesquisa, case=False) |
+                df_atual['local'].str.contains(pesquisa, case=False)
+            ]
+        else:
+            df_exibe = df_atual
+
+        if df_exibe.empty:
+            st.warning("⚠️ Nenhum resultado encontrado.")
+        else:
+            for _, row in df_exibe.iterrows():
+                st.markdown(f"""
+                    <div class="item-card">
+                        <div>
+                            <span class='item-codigo'>{row['codigo']}</span><br>
+                            <span class='item-nome'>{row['material']}</span><br>
+                            <span class='item-meta'>📍 {row['local']} • 📅 {row['data']}</span>
+                        </div>
+                        <div class='item-qtd'>{int(row['qtd'])} un</div>
+                    </div>
+                """, unsafe_allow_html=True)
