@@ -2,12 +2,9 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 import os
-from streamlit_zxing import scan_barcode
 
-# Configuração da Página
 st.set_page_config(page_title="CLIMA POSITIVO • Gestão", page_layout="centered", initial_sidebar_state="collapsed")
 
-# --- ESTILO VISUAL PREMIUM ---
 st.markdown("""
     <style>
     .stApp { background-color: #F3F4F6; }
@@ -36,7 +33,6 @@ st.markdown("""
     </style>
 """, unsafe_allow_html=True)
 
-# --- PERSISTÊNCIA CSV ---
 ARQUIVO_DADOS = "dados_sobras_v2.csv"
 
 def carregar_dados():
@@ -57,7 +53,6 @@ if "obras" not in st.session_state:
 if "pagina_ativa" not in st.session_state:
     st.session_state.pagina_ativa = "Painel"
 
-# Cabeçalho
 st.markdown("""
     <div style='display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.5rem;'>
         <div>
@@ -72,21 +67,17 @@ st.markdown("""
 
 st.markdown("---")
 
-# Menu Superior
 nav_cols = st.columns(3)
 with nav_cols[0]:
     if st.button("📊 Painel", key="nav_p"): st.session_state.pagina_ativa = "Painel"
 with nav_cols[1]:
-    if st.button("📷 Ler / Registar", key="nav_r"): st.session_state.pagina_ativa = "Registo"
+    if st.button("➕ Registar", key="nav_r"): st.session_state.pagina_ativa = "Registo"
 with nav_cols[2]:
     if st.button("📋 Inventário", key="nav_i"): st.session_state.pagina_ativa = "Inventario"
 
 st.markdown("---")
 df_atual = carregar_dados()
 
-# ==========================================
-# 1. PAINEL GERAL
-# ==========================================
 if st.session_state.pagina_ativa == "Painel":
     total_materiais = len(df_atual)
     total_sobras = int(df_atual["qtd"].sum()) if total_materiais > 0 else 0
@@ -121,23 +112,14 @@ if st.session_state.pagina_ativa == "Painel":
     for o in st.session_state.obras:
         st.markdown(f"- 📌 {o}")
 
-# ==========================================
-# 2. LEITURA DE CÓDIGO DE BARRAS & REGISTO
-# ==========================================
 elif st.session_state.pagina_ativa == "Registo":
-    st.markdown("<h3>📷 Leitor de Código de Barras & Registo</h3>", unsafe_allow_html=True)
-    st.markdown("Pode ler o código com a câmara do telemóvel ou introduzir manualmente abaixo:")
-
-    # Acionar a câmara para leitura de código de barras
-    codigo_lido = scan_barcode()
+    st.markdown("<h3>➕ Registo de Material</h3>", unsafe_allow_html=True)
     
-    codigo_inicial = ""
-    if codigo_lido:
-        codigo_inicial = str(codigo_lido)
-        st.success(f"✅ Código detetado com sucesso: **{codigo_inicial}**")
+    # Utilizar a câmara nativa para tirar foto do produto/etiqueta se desejar
+    foto = st.camera_input("📷 Tirar foto do produto ou código (Opcional)")
 
     with st.form("form_registo", clear_on_submit=True):
-        codigo = st.text_input("CÓDIGO DO PRODUTO", value=codigo_inicial)
+        codigo = st.text_input("CÓDIGO DO PRODUTO (Ex: P125)")
         material = st.text_input("NOME DO MATERIAL / DESCRIÇÃO")
         qtd = st.number_input("QUANTIDADE", min_value=1.0, step=1.0, value=1.0, format="%.0f")
         local = st.selectbox("LOCALIZAÇÃO / OBRA", st.session_state.obras)
@@ -159,9 +141,6 @@ elif st.session_state.pagina_ativa == "Registo":
                 st.success("✅ Material guardado com sucesso!")
                 st.rerun()
 
-# ==========================================
-# 3. INVENTÁRIO COMPLETO
-# ==========================================
 elif st.session_state.pagina_ativa == "Inventario":
     st.markdown("<h3>📋 Inventário e Consultas</h3>", unsafe_allow_html=True)
     
